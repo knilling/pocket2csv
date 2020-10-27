@@ -11,4 +11,4 @@ For this script to work, you need:
 * [sed](https://www.gnu.org/software/sed/)
 * [bash](https://www.gnu.org/software/bash/)
 
-There is a forthcoming blog post to demostrate script usage.
+There is a forthcoming blog post to demonstrate script usage.
