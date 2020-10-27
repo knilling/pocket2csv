@@ -1,0 +1,144 @@
+#!/usr/bin/bash
+
+read -r -d '' LOGO <<'EOF'
+...                   _          _    ___                   
+                     | |        | |  |__ \                  
+  _ __    ___    ___ | | __ ___ | |_    ) | ___  ___ __   __
+ | '_ \  / _ \  / __|| |/ // _ \| __|  / / / __|/ __|\ \ / /
+ | |_) || (_) || (__ |   <|  __/| |_  / /_| (__ \__ \ \ V / 
+ | .__/  \___/  \___||_|\_\\___| \__||____|\___||___/  \_/  
+ | |                                                        
+ |_|
+...   
+
+EOF
+echo ""
+echo "$LOGO"
+echo ""
+echo ""
+read -p '[1] Enter Your Pocket API Consumer Key: ' CONSUMER_KEY
+
+read -r -d '' MY_DATA <<EOF
+{
+"consumer_key":"$CONSUMER_KEY",
+"redirect_uri":"https://getpocket.com"
+}
+EOF
+
+MY_CODE=$(\
+curl \
+  --silent \
+  --request POST \
+  --url https://getpocket.com/v3/oauth/request \
+  --header 'content-type: application/json; charset=UTF-8' \
+  --header 'x-accept: application/json' \
+  --data "$MY_DATA" \
+| jq -r .code)
+
+
+echo ""
+echo "[2] COPY/PASTE THIS LINK TO A BROWSER & AUTHENTICATE:"
+echo ""
+echo "https://getpocket.com/auth/authorize?request_token=$MY_CODE&redirect_uri=https://getpocket.com"
+echo ""
+echo "[!] ATTENTION!!! WARNING!!! DANGER!!!"
+echo "[!] "
+echo "[!] Did you successfully complete that last step [^^^]?"
+echo "[!] "
+echo "[!] This script will fail, if you did not."
+echo "[!] ☠   ☠   ☠"
+echo "[!] DO NOT CONTINUE unless successfully authenticated."
+echo "[!] "
+read -p "[!] Press any key to continue (CTRL-C to quit)... "
+echo ""
+
+read -r -d '' MY_DATA <<EOF
+{
+"consumer_key":"$CONSUMER_KEY",
+"code":"$MY_CODE"
+}
+EOF
+
+MY_ACCESS_TOKEN=$(\
+curl \
+  --silent \
+  --request POST \
+  --url https://getpocket.com/v3/oauth/authorize \
+  --header 'content-type: application/json; charset=UTF-8' \
+  --header 'x-accept: application/json' \
+  --data "$MY_DATA" \
+| jq -r .access_token)
+
+read -r -d '' MY_DATA <<EOF
+{
+"state": "all",
+"sort": "newest",
+"detailType": "complete",
+"consumer_key":"$CONSUMER_KEY",
+"access_token":"$MY_ACCESS_TOKEN"
+}
+EOF
+
+echo "[+] Downloading Pocket bookmarks json..."
+echo "[+] Writing bookmarks.json	..."
+
+curl \
+  --silent \
+  --request POST \
+  --url https://getpocket.com/v3/get \
+  --header 'content-type: application/json' \
+  --output bookmarks.json \
+  --data "$MY_DATA"
+
+echo "[+] Converting bookmarks.json to csv..."
+echo "[+] Writing bookmarks.csv..."
+
+jq '.list | .[]' bookmarks.json \
+| jq '{
+time_added: .time_added,
+favorite: .favorite,
+has_video: .has_video,
+has_image: .has_image,
+word_count: .word_count,
+given_title: .given_title,
+given_url: .given_url,
+resolved_title: .resolved_title,
+resolved_url: .resolved_url,
+tags: .tags,
+excerpt: .excerpt}' \
+| jq '
+if .tags == null
+ then
+ .tags = {}
+ else
+ .tags = .tags 
+ end
+' \
+| jq '.favorite = (.favorite | tonumber)' \
+| jq '.has_video = (.has_video | tonumber)' \
+| jq '.has_image = (.has_image | tonumber)' \
+| jq '.word_count = (.word_count | tonumber)' \
+| jq '.time_added = (.time_added | tonumber | todate)' \
+| jq '.tags = (.tags | keys)' \
+| jq '.tags = (.tags | join(" AND "))' \
+| jq '.excerpt = (.excerpt | gsub("[\\n\\t]"; ""))' \
+| jq '.given_title = (.given_title | gsub("[\\n\\t]"; ""))' \
+| jq 'map(.)' \
+| jq -r '@csv' > bookmarks.csv
+
+
+sed -i '1s/^/'\
+'time_added,'\
+'favorite,'\
+'has_video,'\
+'has_image,'\
+'word_count,'\
+'given_title,'\
+'given_url,'\
+'resolved_title,'\
+'resolved_url,'\
+'tags,'\
+'excerpt\n/' \
+bookmarks.csv
+
+echo "[+] Done."
