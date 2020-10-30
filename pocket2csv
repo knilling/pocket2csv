@@ -110,7 +110,7 @@ read -r -d '' MY_DATA <<EOF
 EOF
 
 echo "[+] Downloading Pocket bookmarks json..."
-echo "[+] Writing bookmarks.json	..."
+echo "[+] Writing bookmarks.json..."
 
 curl \
   --silent \
@@ -124,18 +124,6 @@ echo "[+] Converting bookmarks.json to csv..."
 echo "[+] Writing bookmarks.csv..."
 
 jq '.list | .[]' bookmarks.json \
-| jq '{
-time_added: .time_added,
-favorite: .favorite,
-has_video: .has_video,
-has_image: .has_image,
-word_count: .word_count,
-given_title: .given_title,
-given_url: .given_url,
-resolved_title: .resolved_title,
-resolved_url: .resolved_url,
-tags: .tags,
-excerpt: .excerpt}' \
 | jq '
 if .tags == null
  then
@@ -149,25 +137,88 @@ if .tags == null
 | jq '.has_image = (.has_image | tonumber)' \
 | jq '.word_count = (.word_count | tonumber)' \
 | jq '.time_added = (.time_added | tonumber | todate)' \
+| jq '.year_added = (.time_added | split("T") | .[0] | split("-") | .[0] | tonumber)' \
+| jq '.month_added = (.time_added | split("T") | .[0] | split("-") | .[1] | tonumber)' \
+| jq '.day_added = (.time_added | split("T") | .[0] | split("-") | .[2] | tonumber)' \
+| jq '.hour_added = (.time_added | split("T") | .[1] | split(":") | .[0] | tonumber)' \
 | jq '.tags = (.tags | keys)' \
+| jq '.ntags = (.tags | length)' \
 | jq '.tags = (.tags | join(" AND "))' \
+| jq '.given_domain = (.given_url | split ("/") | .[2])' \
+| jq '.n_given_domain = (.given_url | split (".") | length)' \
+| jq '.resolved_domain = (.resolved_url | split ("/") | .[2])' \
+| jq '.n_resolved_domain = (.resolved_url | split (".") | length)' \
+| jq '.n_domain_equal = (.n_given_domain == .n_resolved_domain)' \
+| jq '.given_tld1 = (.given_domain | tostring | split(".") | .[length-1])' \
+| jq '.given_tld2 = (.given_domain | tostring | split(".") | .[length-2])' \
+| jq '.resolved_tld1 = (.resolved_domain | tostring | split(".") | .[length-1])' \
+| jq '.resolved_tld2 = (.resolved_domain | tostring |split(".") | .[length-2])' \
+| jq '.titles_match = (.given_title == .resolved_title)' \
+| jq '.urls_match = (.given_url == .resolved_url)' \
+| jq '.domains_match = (.given_domain == .resolved_domain)' \
 | jq '.excerpt = (.excerpt | gsub("[\\n\\t]"; ""))' \
 | jq '.given_title = (.given_title | gsub("[\\n\\t]"; ""))' \
+| jq '{
+time_added: .time_added,
+year_added: .year_added,
+month_added: .month_added,
+day_added: .day_added,
+hour_added: .hour_added,
+favorite: .favorite,
+has_video: .has_video,
+has_image: .has_image,
+word_count: .word_count,
+n_given_domain: .n_given_domain,
+n_resolved_domain: .n_resolved_domain,
+n_domain_equal: .n_domain_equal,
+ntags: .ntags,
+tags: .tags,
+titles_match: .titles_match,
+domains_match: .domains_match,
+urls_match: .urls_match,
+given_title: .given_title,
+given_domain: .given_domain,
+given_tld1: .given_tld1,
+given_tld2: .given_tld2,
+given_url: .given_url,
+resolved_title: .resolved_title,
+resolved_domain: .resolved_domain,
+resolved_tld1: .resolved_tld1,
+resolved_tld2: .resolved_tld2,
+resolved_url: .resolved_url,
+excerpt: .excerpt}' \
 | jq 'map(.)' \
 | jq -r '@csv' > bookmarks.csv
 
 
 sed -i '1s/^/'\
 'time_added,'\
+'year_added,'\
+'month_added,'\
+'day_added,'\
+'hour_added,'\
 'favorite,'\
 'has_video,'\
 'has_image,'\
 'word_count,'\
+'n_given_domain,'\
+'n_resolved_domain,'\
+'n_domain_equal,'\
+'ntags,'\
+'tags,'\
+'titles_match,'\
+'domains_match,'\
+'urls_match,'\
 'given_title,'\
+'given_domain,'\
+'given_tld1,'\
+'given_tld2,'\
 'given_url,'\
 'resolved_title,'\
+'resolved_domain,'\
+'resolved_tld1,'\
+'resolved_tld2,'\
 'resolved_url,'\
-'tags,'\
 'excerpt\n/' \
 bookmarks.csv
 
