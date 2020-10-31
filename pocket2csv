@@ -67,17 +67,15 @@ curl \
 
 
 echo ""
-echo "[2] COPY/PASTE THIS LINK TO A BROWSER & AUTHENTICATE:"
+echo "[2] Visit this link in a browser:"
 echo ""
 echo "https://getpocket.com/auth/authorize?request_token=$MY_CODE&redirect_uri=https://getpocket.com"
 echo ""
-echo "[!] ATTENTION!!! WARNING!!! DANGER!!!"
+echo "[3] Login to Pocket (if not already logged in)."
+echo "[4] Click the Authorize button."
 echo "[!] "
-echo "[!] Did you successfully complete that last step [^^^]?"
-echo "[!] "
-echo "[!] This script will fail, if you did not."
-echo "[!] ☠   ☠   ☠"
-echo "[!] DO NOT CONTINUE unless successfully authenticated."
+echo "[!] DO NOT CONTINUE UNTIL YOU DO [2], [3], [4] (above [^])!"
+echo "[!] OTHERWISE THIS SCRIPT WILL FAIL. ☠"
 echo "[!] "
 read -p "[!] Press any key to continue (CTRL-C to quit)... "
 echo ""
@@ -109,8 +107,7 @@ read -r -d '' MY_DATA <<EOF
 }
 EOF
 
-echo "[+] Downloading Pocket bookmarks..."
-echo "[+] Writing to bookmarks.json..."
+echo "[+] Downloading Pocket bookmarks to bookmarks.json..."
 
 curl \
   --silent \
@@ -120,8 +117,9 @@ curl \
   --output bookmarks.json \
   --data "$MY_DATA"
 
-echo "[+] Converting bookmarks.json to csv..."
-echo "[+] Writing to bookmarks.csv..."
+
+echo "[+] Converting bookmarks.json to bookmarks.csv..."
+echo "    [.] Creating intermediate file bookmarks-tmp.json..."
 
 jq '.list | .[]' bookmarks.json \
 | jq '
@@ -189,6 +187,8 @@ resolved_url: .resolved_url,
 excerpt: .excerpt}' > bookmarks-tmp.json
 
 jq -r -s '.[0] | keys_unsorted | @csv' < bookmarks-tmp.json > bookmarks.csv
+
+echo "    [.] Writing to bookmarks.csv..."
 
 jq 'map(.)' bookmarks-tmp.json \
 | jq -r '@csv' >> bookmarks.csv
