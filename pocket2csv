@@ -68,8 +68,6 @@ curl \
   --data "$MY_DATA" \
 | jq -r .code)
 
-
-echo ""
 echo "[2] Visit this link in a browser:"
 echo ""
 echo "https://getpocket.com/auth/authorize?request_token=$MY_CODE&redirect_uri=https://getpocket.com"
