@@ -109,8 +109,8 @@ read -r -d '' MY_DATA <<EOF
 }
 EOF
 
-echo "[+] Downloading Pocket bookmarks json..."
-echo "[+] Writing bookmarks.json..."
+echo "[+] Downloading Pocket bookmarks..."
+echo "[+] Writing to bookmarks.json..."
 
 curl \
   --silent \
@@ -121,7 +121,7 @@ curl \
   --data "$MY_DATA"
 
 echo "[+] Converting bookmarks.json to csv..."
-echo "[+] Writing bookmarks.csv..."
+echo "[+] Writing to bookmarks.csv..."
 
 jq '.list | .[]' bookmarks.json \
 | jq '
@@ -186,40 +186,11 @@ resolved_domain: .resolved_domain,
 resolved_tld1: .resolved_tld1,
 resolved_tld2: .resolved_tld2,
 resolved_url: .resolved_url,
-excerpt: .excerpt}' \
-| jq 'map(.)' \
-| jq -r '@csv' > bookmarks.csv
+excerpt: .excerpt}' > bookmarks-tmp.json
 
+jq -r -s '.[0] | keys_unsorted | @csv' < bookmarks-tmp.json > bookmarks.csv
 
-sed -i '1s/^/'\
-'time_added,'\
-'year_added,'\
-'month_added,'\
-'day_added,'\
-'hour_added,'\
-'favorite,'\
-'has_video,'\
-'has_image,'\
-'word_count,'\
-'n_given_domain,'\
-'n_resolved_domain,'\
-'n_domain_equal,'\
-'ntags,'\
-'tags,'\
-'titles_match,'\
-'domains_match,'\
-'urls_match,'\
-'given_title,'\
-'given_domain,'\
-'given_tld1,'\
-'given_tld2,'\
-'given_url,'\
-'resolved_title,'\
-'resolved_domain,'\
-'resolved_tld1,'\
-'resolved_tld2,'\
-'resolved_url,'\
-'excerpt\n/' \
-bookmarks.csv
+jq 'map(.)' bookmarks-tmp.json \
+| jq -r '@csv' >> bookmarks.csv
 
 echo "[+] Done."
