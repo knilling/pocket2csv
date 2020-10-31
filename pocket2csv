@@ -75,11 +75,10 @@ echo ""
 echo "[3] Login to Pocket (if not already logged in)."
 echo "[4] Click the Authorize button."
 echo "[!] "
-echo "[!] DO NOT CONTINUE UNTIL YOU DO [2], [3], [4] (above [^])!"
+echo "[!] DO NOT CONTINUE UNTIL YOU DO [2], [3], [4] !"
 echo "[!] OTHERWISE THIS SCRIPT WILL FAIL. ☠"
 echo "[!] "
-read -p "[!] Press any key to continue (CTRL-C to quit)... "
-echo ""
+read -p "[5] Press any key to continue (CTRL-C to quit)... "
 
 read -r -d '' MY_DATA <<EOF
 {
@@ -120,7 +119,7 @@ curl \
 
 
 echo "[+] Converting bookmarks.json to bookmarks.csv..."
-echo "    [.] Creating intermediate file bookmarks-tmp.json..."
+echo " [>] Creating intermediate file bookmarks-tmp.json..."
 
 jq '.list | .[]' bookmarks.json \
 | jq '
@@ -189,7 +188,7 @@ excerpt: .excerpt}' > bookmarks-tmp.json
 
 jq -r -s '.[0] | keys_unsorted | @csv' < bookmarks-tmp.json > bookmarks.csv
 
-echo "    [.] Writing to bookmarks.csv..."
+echo " [>] Writing to bookmarks.csv..."
 
 jq 'map(.)' bookmarks-tmp.json \
 | jq -r '@csv' >> bookmarks.csv
