@@ -12,4 +12,4 @@ For this script to work, you need:
 
 There is a forthcoming blog post to demonstrate script usage.
 
-For a demo on how to use `pocket2csv`, see [https://medium.com/netdef/export-your-pocket-bookmarks-to-csv-7e66997b9b98](https://medium.com/netdef/export-your-pocket-bookmarks-to-csv-7e66997b9b98).
+For a demo on how to use `pocket2csv`, see [Export Your Pocket Bookmarks to CSV](https://medium.com/netdef/export-your-pocket-bookmarks-to-csv-7e66997b9b98).
